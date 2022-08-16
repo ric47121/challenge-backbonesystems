@@ -18,11 +18,9 @@ class ZipCodeController extends Controller
         $res = Redis::get($zip_code);
 
         if($res){
-            // return json_decode($res);
             return ($res);
         }
 
-// dd($res);
         $path = storage_path().'/CPdescarga.txt';
         $arch = file_get_contents_utf8($path);
 
