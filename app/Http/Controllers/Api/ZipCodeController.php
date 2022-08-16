@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Redis;
 
 class ZipCodeController extends Controller
 {
@@ -14,6 +15,14 @@ class ZipCodeController extends Controller
      */
     public function index($zip_code)
     {
+        $res = Redis::get($zip_code);
+
+        if($res){
+            // return json_decode($res);
+            return ($res);
+        }
+
+// dd($res);
         $path = storage_path().'/CPdescarga.txt';
         $arch = file_get_contents_utf8($path);
 
@@ -69,6 +78,7 @@ class ZipCodeController extends Controller
                 $arr['municipality'] = $municipality;
 
                 $encontro = true;
+                Redis::set($zip_code, json_encode($arr));
                 break;
             }
         }
