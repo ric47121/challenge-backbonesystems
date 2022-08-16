@@ -11,3 +11,6 @@ cuando pasa a otro codigo corto el proceso para ahorrar recursos, ya que el arch
 
 ## actualizacion
 guardo los resultados en redis la primera vez. luego las consultas son mas rapidas
+
+## actualizacion 2
+add cors middleware
