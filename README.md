@@ -14,3 +14,6 @@ guardo los resultados en redis la primera vez. luego las consultas son mas rapid
 
 ## actualizacion 2
 add cors middleware
+
+## actualizacion 3
+creo archivo de indices y luego sobre ese hago una busqueda binaria

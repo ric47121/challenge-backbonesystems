@@ -1,5 +1,34 @@
 <?php
 
+function fgets_utf8($fn) {
+    $content = fgets($fn);
+     return mb_convert_encoding($content, 'UTF-8',
+         mb_detect_encoding($content, 'UTF-8, ISO-8859-1', true));
+}
+
+
+function get_position_element($sorted_arr, $n, $element){
+
+	$i = 0;
+	$start = 0;
+	$end = $n - 1;
+
+	while ($i < $n){
+		$middle = intdiv($start + $end, 2);
+
+		if ($sorted_arr[$middle] == $element){
+			return $middle;
+		}else if ($sorted_arr[$middle] < $element){
+			$start = $middle + 1;
+		}else{ 
+			$end = $middle - 1;
+		}
+		$i += 1;
+	}
+	return false;
+}
+
+
 function file_get_contents_utf8($fn) {
     $content = file_get_contents($fn);
     return mb_convert_encoding($content, 'UTF-8',

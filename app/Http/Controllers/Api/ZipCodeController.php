@@ -8,12 +8,156 @@ use Illuminate\Support\Facades\Redis;
 
 class ZipCodeController extends Controller
 {
+
+    private function generate_file_indices(){
+        $handle_ori = fopen(storage_path().'/CPdescarga.txt', "r");
+        $handle = fopen(storage_path()."/CPdescarga_indices.txt", "w") or die("Error creando archivo");
+
+        $ultimo = 0;
+        $position_init_line = ftell($handle_ori);
+        while (($raw_string = fgets($handle_ori)) !== false) {
+            $position_end_line = ftell($handle_ori);
+
+            if (stristr($raw_string,'|')) {
+                $parts = explode("|", $raw_string);
+                if( strlen($parts[0]) > 0 && strlen($parts[0]) < 10 &&  is_numeric($parts[0]) && intval($parts[0]) != $ultimo ){
+                    fwrite($handle, $parts[0].';'.$position_init_line."\n");
+                    $ultimo = intval($parts[0]);
+                }	
+            }
+            $position_init_line = $position_end_line;
+        }
+        fclose($handle_ori);
+        fclose($handle);
+    }
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
     public function index($zip_code)
+    {
+        if(!file_exists(storage_path().'/CPdescarga_indices.txt'))
+            $this->generate_file_indices();
+
+        if(intval($zip_code) == 0) abort(500);
+
+        $arch = file_get_contents(storage_path().'/CPdescarga_indices.txt');
+        $lines = explode("\n", $arch);
+        
+        $arr = [];
+        $arr_pos = [];
+        for ($i=0; $i < count($lines); $i++) { 
+            $pedazos = explode(";", $lines[$i]);
+            $arr[] = $pedazos[0];  
+            $arr_pos[] = (isset($pedazos[1]))? intval($pedazos[1]):0;
+            // $arr_pos[] = $pedazos[1];
+        }
+
+
+        if($pos = get_position_element($arr, count($arr), $zip_code) ){
+            return $this->get_data_from_position($arr_pos[$pos], $zip_code);
+        }else{
+            abort(500);
+        }
+        
+    }
+
+
+    private function get_data_from_position($position, $buscar){
+    
+    
+        $handle = fopen(storage_path().'/CPdescarga.txt', "r");
+        fseek($handle, $position);
+        // fseek($handle, 1653);
+    
+        // $lineNumber = 1;
+        $arr = [];
+        while (($raw_string = fgets_utf8($handle)) !== false) {
+            
+            // die(json_encode(['raw_string'=>$raw_string]));
+    
+            if(stristr($raw_string, "|")){
+    
+                $parts = explode("|", $raw_string);
+                if(intval($parts[0]) == $buscar ){
+    
+                    $arr['zip_code'] = $parts[0];
+                    // die(json_encode($arr));
+                    $arr['locality'] = procesar_str($parts[5]);
+                    // $arr['locality'] = utf8_encode("uuñ");
+        // die(json_encode($arr));			
+                    $federal_entity = [];
+                    $federal_entity['key'] = procesar_int($parts[7]);
+                    $federal_entity['name'] = procesar_str($parts[4]);
+                    $federal_entity['code'] = procesar_int($parts[9]);
+    
+                    $arr['federal_entity'] = $federal_entity;
+    
+        // die(json_encode($arr));
+    
+                    // $j=$i;
+                    // $parts_2 = explode("|", $lines[$j]);
+                    $parts_2 = explode("|", $raw_string);
+                    $settlements = [];
+                    // while( $j < count($lines) && trim($parts_2[0]) == $buscar ){
+                    while (($raw_string_2 = fgets_utf8($handle)) !== false && trim($parts_2[0]) == $buscar) {
+                            $data = [];
+                            $data['key'] = procesar_int($parts_2[12]);
+                            $data['name'] = procesar_str($parts_2[1]);
+                            $data['zone_type'] = procesar_str($parts_2[13]);
+    
+    
+                            $settlement_type = [];
+                            $settlement_type['name'] = procesar_str_sin_uppercase($parts_2[2]);
+                            $data['settlement_type'] = $settlement_type;
+    
+                            $settlements[] = $data;
+                            // $j++;
+                            // $parts_2 = explode("|", $lines[$j]);
+                            $parts_2 = explode("|", $raw_string_2);
+                    }
+    
+                    $arr['settlements'] = $settlements;
+    
+    
+                    $municipality = [];
+                    $municipality['key'] = procesar_int($parts[11]);
+                    $municipality['name'] = procesar_str($parts[3]);
+    
+                    $arr['municipality'] = $municipality;
+    
+                    $encontro = true;
+                    break;
+                }
+    
+            }else{
+                continue;
+            }
+    
+            // $lineNumber++;
+            // if($lineNumber >= 500) 
+                // die(json_encode(['lineNumber'=>$lineNumber]));
+        }
+    
+        fclose($handle);
+    
+    
+            
+        // return json_encode($arr);
+        return ($arr);
+    
+    
+    }
+
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index_redis($zip_code)
     {
         $res = Redis::get($zip_code);
 
