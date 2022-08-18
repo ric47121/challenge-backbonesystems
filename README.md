@@ -17,3 +17,6 @@ add cors middleware
 
 ## actualizacion 3
 creo archivo de indices y luego sobre ese hago una busqueda binaria
+
+## actualizacion 4
+el indice lo grabo en redis
