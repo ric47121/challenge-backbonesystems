@@ -9,6 +9,31 @@ use Illuminate\Support\Facades\Redis;
 class ZipCodeController extends Controller
 {
 
+    private function generate_indices_in_redis(){
+        $handle_ori = fopen(storage_path().'/CPdescarga.txt', "r");
+        
+        $ultimo = 0;
+        $todo =[];
+        $posiciones =[];
+        $position_init_line = ftell($handle_ori);
+        while (($raw_string = fgets($handle_ori)) !== false) {
+            $position_end_line = ftell($handle_ori);
+
+            if (stristr($raw_string,'|')) {
+                $parts = explode("|", $raw_string);
+                if( strlen($parts[0]) > 0 && strlen($parts[0]) < 10 &&  is_numeric($parts[0]) && intval($parts[0]) != $ultimo ){
+                        $todo[] = $parts[0];
+                        $posiciones[] = $position_init_line;
+                    $ultimo = intval($parts[0]);
+                }	
+            }
+            $position_init_line = $position_end_line;
+        }
+        fclose($handle_ori);
+        Redis::set('arr_indices', json_encode($todo));
+        Redis::set('arr_posiciones', json_encode($posiciones));
+    }
+
     private function generate_file_indices(){
         $handle_ori = fopen(storage_path().'/CPdescarga.txt', "r");
         $handle = fopen(storage_path()."/CPdescarga_indices.txt", "w") or die("Error creando archivo");
@@ -38,6 +63,28 @@ class ZipCodeController extends Controller
      */
     public function index($zip_code)
     {
+        $arr_indices = Redis::get('arr_indices');
+        $arr_posiciones = Redis::get('arr_posiciones');
+
+        if(!$arr_indices){
+            $this->generate_indices_in_redis();
+        }
+
+        if(intval($zip_code) == 0) abort(500);
+
+        $arr_indices = json_decode($arr_indices);
+        $arr_posiciones = json_decode($arr_posiciones);
+
+        if($pos = get_position_element($arr_indices, count($arr_indices), $zip_code) ){
+            return $this->get_data_from_position($arr_posiciones[$pos], $zip_code);
+        }else{
+            abort(500);
+        }
+        
+    }
+
+    public function index_indice_file($zip_code)
+    {
         if(!file_exists(storage_path().'/CPdescarga_indices.txt'))
             $this->generate_file_indices();
 
@@ -66,7 +113,6 @@ class ZipCodeController extends Controller
 
 
     private function get_data_from_position($position, $buscar){
-    
     
         $handle = fopen(storage_path().'/CPdescarga.txt', "r");
         fseek($handle, $position);

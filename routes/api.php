@@ -21,6 +21,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::group(['namespace'=> 'Api'], function(){
 
     Route::get('zip-codes-redis/{zip_code}', 'ZipCodeController@index_redis');
+    Route::get('zip-codes-indice-file/{zip_code}', 'ZipCodeController@index_indice_file');
     Route::get('zip-codes/{zip_code}', 'ZipCodeController@index');
     
 });
