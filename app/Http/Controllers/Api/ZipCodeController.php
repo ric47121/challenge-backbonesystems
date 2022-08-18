@@ -70,24 +70,17 @@ class ZipCodeController extends Controller
     
         $handle = fopen(storage_path().'/CPdescarga.txt', "r");
         fseek($handle, $position);
-        // fseek($handle, 1653);
     
-        // $lineNumber = 1;
         $arr = [];
         while (($raw_string = fgets_utf8($handle)) !== false) {
             
-            // die(json_encode(['raw_string'=>$raw_string]));
-    
             if(stristr($raw_string, "|")){
     
                 $parts = explode("|", $raw_string);
                 if(intval($parts[0]) == $buscar ){
     
                     $arr['zip_code'] = $parts[0];
-                    // die(json_encode($arr));
                     $arr['locality'] = procesar_str($parts[5]);
-                    // $arr['locality'] = utf8_encode("uuñ");
-        // die(json_encode($arr));			
                     $federal_entity = [];
                     $federal_entity['key'] = procesar_int($parts[7]);
                     $federal_entity['name'] = procesar_str($parts[4]);
@@ -95,13 +88,8 @@ class ZipCodeController extends Controller
     
                     $arr['federal_entity'] = $federal_entity;
     
-        // die(json_encode($arr));
-    
-                    // $j=$i;
-                    // $parts_2 = explode("|", $lines[$j]);
                     $parts_2 = explode("|", $raw_string);
                     $settlements = [];
-                    // while( $j < count($lines) && trim($parts_2[0]) == $buscar ){
                     while (($raw_string_2 = fgets_utf8($handle)) !== false && trim($parts_2[0]) == $buscar) {
                             $data = [];
                             $data['key'] = procesar_int($parts_2[12]);
@@ -114,13 +102,10 @@ class ZipCodeController extends Controller
                             $data['settlement_type'] = $settlement_type;
     
                             $settlements[] = $data;
-                            // $j++;
-                            // $parts_2 = explode("|", $lines[$j]);
                             $parts_2 = explode("|", $raw_string_2);
                     }
     
                     $arr['settlements'] = $settlements;
-    
     
                     $municipality = [];
                     $municipality['key'] = procesar_int($parts[11]);
@@ -136,19 +121,10 @@ class ZipCodeController extends Controller
                 continue;
             }
     
-            // $lineNumber++;
-            // if($lineNumber >= 500) 
-                // die(json_encode(['lineNumber'=>$lineNumber]));
         }
     
         fclose($handle);
-    
-    
-            
-        // return json_encode($arr);
         return ($arr);
-    
-    
     }
 
 
